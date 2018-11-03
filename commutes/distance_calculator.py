@@ -11,9 +11,9 @@ import os
 import sys
 from typing import List
 
-# FIXME: Temporary path discovery so we can import from config. To be removed soon.
 from datetime import datetime
 
+# FIXME: Temporary path discovery so we can import from config. To be removed soon.
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
@@ -36,6 +36,20 @@ def get_data_from_json(data: dict, key: str):
     return retrieved_key
 
 
+def get_route_information(origin_name: str, destination_name: str) -> dict:
+    base_url = GOOGLE_MAPS_API_URL
+    endpoint = "/maps/api/directions/json"
+    url = base_url + endpoint
+    query_params = {
+        'origin': origin_name,
+        'destination': destination_name,
+        'key': GOOGLE_MAPS_API_KEY,
+        'mode': 'transit',  # Only get public transport routes for now
+    }
+    result = requests.get(url, params=query_params)
+    return result.json()
+
+
 class CommuteDistanceCalculator:
     data: dict = None
 
@@ -43,22 +57,8 @@ class CommuteDistanceCalculator:
         self.origin_name = origin_name
         self.destination_name = destination_name
 
-    def calculate_time_of_commute(self):
-        # TODO: Move request structure to another function/module to handle API requests
-        base_url = GOOGLE_MAPS_API_URL
-        endpoint = "/maps/api/directions/json"
-        url = base_url + endpoint
-        query_params = {
-            'origin': self.origin_name,
-            'destination': self.destination_name,
-            'key': GOOGLE_MAPS_API_KEY,
-            'mode': 'transit',  # Only get public transport routes for now
-        }
-        result = requests.get(url, params=query_params)
-        self.data = result.json()
-        return self.get_time_for_commute()
-
-    def get_time_for_commute(self):
+    def get_time_for_commute(self, origin_name: str, destination_name: str):
+        self.data = get_route_information(origin_name, destination_name)
         list_of_routes = get_data_from_json(self.data, 'routes')
         times_for_each_route: List[float] = []
         for route in list_of_routes:
@@ -77,12 +77,12 @@ class CommuteDistanceCalculator:
         For the moment, it does not change the data or stop calculations; its main purpose is
         to observe the data processed and emit alerts.
         """
-        analysis_list: List[float] = times_for_each_route.copy()
-        min_time, max_time = min(times_for_each_route), max(times_for_each_route)
-        analysis_list.remove(min_time)
-        analysis_list.remove(max_time)
+        self.compare_min_and_max_difference_with_toleration(times_for_each_route)
+        self.compare_times_means_and_differences_with_toleration(times_for_each_route)
 
+    def compare_min_and_max_difference_with_toleration(self, times_for_each_route: List[float]):
         # Compares the difference between the maximum and the minimum time to the tolerated amount
+        min_time, max_time = min(times_for_each_route), max(times_for_each_route)
         if (max_time - min_time) > posix_tolerance_for_commute:
             LOG.warning(
                 "The difference encountered between the max and the min time for routes from %s "
@@ -92,6 +92,12 @@ class CommuteDistanceCalculator:
                 datetime.utcfromtimestamp(max_time - min_time),
                 posix_tolerance_for_commute
             )
+
+    def compare_times_means_and_differences_with_toleration(self, times_for_each_route):
+        analysis_list: List[float] = times_for_each_route.copy()
+        min_time, max_time = min(times_for_each_route), max(times_for_each_route)
+        analysis_list.remove(min_time)
+        analysis_list.remove(max_time)
 
         # Gets the mean of all other elements in the list to compare with this difference.
         avg_time_of_other_routes = sum(analysis_list) / len(analysis_list)
