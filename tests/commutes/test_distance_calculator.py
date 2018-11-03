@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from commutes.distance_calculator import calculate_time_of_commute
 
 
@@ -8,7 +10,9 @@ class TestCalculateTimeOfCommute:
         Checks that data retrieved from the API in POSIX is successfully returned by the function
         as a correct UTC naive datetime.
         """
-        calculate_time_of_commute(
-            departure_location='Gatwick Airport',
-            arrival_location='Kings Cross St Pancras'
+        result = calculate_time_of_commute(
+            origin_name='Gatwick Airport',
+            destination_name='Kings Cross St Pancras',
         )
+        assert type(result) == datetime
+        assert result.tzinfo is None            # Assert it is a naive datetime

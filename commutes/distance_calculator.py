@@ -2,7 +2,10 @@
 #
 # 1. class Place to handle coordinates (not stored in the db), which are more reliable than
 # str lookups
-from settings import GOOGLE_MAPS_API_URL, GOOGLE_MAPS_API_KEY
+#
+import requests
+
+from config.settings import GOOGLE_MAPS_API_URL, GOOGLE_MAPS_API_KEY
 
 
 def calculate_time_of_commute(origin_name: str, destination_name: str):
@@ -15,4 +18,6 @@ def calculate_time_of_commute(origin_name: str, destination_name: str):
         'key': GOOGLE_MAPS_API_KEY,
         'mode': 'transit',          # Only get public transport routes for now
     }
-    requests.get(url, params=query_params)
+    request = requests.get(url, params=query_params)
+    print(request.status_code)
+    return ''
