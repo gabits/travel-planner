@@ -1,4 +1,8 @@
 """
+Measures the time it takes to commute from an origin place to a destination.
+
+=====================================================================
+
 Ideas for the future:
 
 1. A class to handle coordinates (not stored in the db)
@@ -52,6 +56,8 @@ def get_route_information(origin_name: str, destination_name: str) -> dict:
 
 class CommuteDistanceCalculator:
     data: dict = None
+    origin_name: str = None
+    destination_name: str = None
 
     def __init__(self, origin_name: str, destination_name: str):
         self.origin_name = origin_name
@@ -79,10 +85,10 @@ class CommuteDistanceCalculator:
         to observe the data processed and emit alerts.
         """
         min_time, max_time = min(routes_times), max(routes_times)
-        self.compare_min_and_max_difference_with_toleration(min_time, max_time)
-        self.compare_times_means_and_differences_with_toleration(routes_times, min_time, max_time)
+        self._compare_min_and_max_difference_with_toleration(min_time, max_time)
+        self._compare_times_means_and_differences_with_toleration(routes_times, min_time, max_time)
 
-    def compare_min_and_max_difference_with_toleration(self, min_time: float, max_time: float):
+    def _compare_min_and_max_difference_with_toleration(self, min_time: float, max_time: float):
         # Compares the difference between the maximum and the minimum time to the tolerated amount
         if (max_time - min_time) > posix_tolerance_for_commute:
             LOG.warning(
@@ -94,7 +100,7 @@ class CommuteDistanceCalculator:
                 posix_tolerance_for_commute
             )
 
-    def compare_times_means_and_differences_with_toleration(
+    def _compare_times_means_and_differences_with_toleration(
             self,
             times_for_each_route: List[float],
             min_time: float,
