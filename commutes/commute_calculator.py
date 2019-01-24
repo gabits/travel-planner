@@ -11,11 +11,11 @@ information in the request to the Google API such as the country/city of locatio
 3. [IMPORTANT] Validate response from the API
 """
 import logging
-import os
 import sys
+from datetime import datetime
 from typing import List
 
-from datetime import datetime
+import os
 
 # FIXME: Temporary path discovery so we can import from config. To be removed soon.
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
