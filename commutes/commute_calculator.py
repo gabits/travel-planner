@@ -21,7 +21,7 @@ import os
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
-from commutes import get_posix_difference_tolerated_for_commute
+from .utils import get_posix_difference_tolerated_for_commute
 
 import requests
 
@@ -33,10 +33,16 @@ posix_tolerance_for_commute = get_posix_difference_tolerated_for_commute()
 
 
 # TODO: Move to utils file
-def get_data_from_json(data: dict, key: str):
+def get_key_from_data_dict(data: dict, key: str):
+    """
+    Attempt to get the value for an expected key from the JSON data and
+    log an error if it fails.
+    """
     retrieved_key = data.get(key, None)
     if not retrieved_key:
-        raise KeyError(f"Could not get key {key} from request to the API. Data received: {data}")
+        LOG.info(
+            f"Could not get key {key} from request to the API. Data received: {data}"
+        )
     return retrieved_key
 
 
@@ -65,7 +71,7 @@ class CommuteDistanceCalculator:
 
     def get_time_for_commute(self, origin_name: str, destination_name: str):
         self.data = get_route_information(origin_name, destination_name)
-        list_of_routes = get_data_from_json(self.data, 'routes')
+        list_of_routes = get_key_from_data_dict(self.data, 'routes')
         times_for_each_route: List[float] = []
         for route in list_of_routes:
             legs: list = route['legs']
